@@ -53,7 +53,7 @@ ui <- fluidPage(
         
         sliderInput(inputId = "min_freq", label = "Filter word combinations that exist less than n times", min = 1  ,max=50, value = 2, step = 1),
         
-        sliderInput(inputId = "word_size", label = "Word size", min = 0.5  ,max=2, value = 1, step = 0.2),
+        sliderInput(inputId = "word_size", label = "Word size", min = 0.5  ,max=2, value = 1, step = 0.1),
         
         radioButtons("lang", "Language (for removing stop words)", selected = "nl",
                      choices=c("Dutch"="nl",
@@ -98,7 +98,7 @@ server <- function(input, output) {
          DT::datatable(goals, options = list(lengthMenu = c(5, 30, 50), pageLength = 5))
     })
 
-# Creates a plot for word cloud ----------------------------------
+# Creates a plot for word cloud -----------------------------------
     
         
     output$wordcloud <-renderWordcloud2({
