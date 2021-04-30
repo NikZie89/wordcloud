@@ -51,9 +51,9 @@ ui <- fluidPage(
         
         checkboxInput("header", "Uncheck if the file has no column headers", TRUE),
         
-        sliderInput(inputId = "min_freq", label = "Filter word combinations that exist less than n times", min = 1  ,max=50, value = 2, step = 1),
+        sliderInput(inputId = "min_freq", label = "Filter word combinations that exist less than n times", min = 1  ,max=50, value = 10, step = 1),
         
-        sliderInput(inputId = "word_size", label = "Word size", min = 0.5  ,max=2, value = 1, step = 0.1),
+        sliderInput(inputId = "word_size", label = "Word size", min = 0.5  ,max=2, value = 0.9, step = 0.1),
         
         radioButtons("lang", "Language (for removing stop words)", selected = "nl",
                      choices=c("Dutch"="nl",
@@ -67,7 +67,9 @@ ui <- fluidPage(
     mainPanel(
         tabsetPanel(
             tabPanel("Table", div(DT::dataTableOutput("goal_table"), style = "font-size:80%")),
-            tabPanel("Word cloud", wordcloud2Output("wordcloud", width = "100%", height=800))
+            tabPanel("Word cloud", wordcloud2Output("wordcloud", width = "100%", height=800)),
+            tabPanel("Bigram count", div(DT::dataTableOutput("bigram_count"), style = "font-size:80%")),
+            tabPanel("Bigram occurrence", div(DT::dataTableOutput("bigram_occ"), style = "font-size:80%"))
                     )
             )
         )
@@ -122,18 +124,19 @@ server <- function(input, output) {
         tidyr::unite(bigrams, word_1, word_2, sep=" ")
 
     goal_tokens<-goal_tokens%>%dplyr::left_join(goals_long, by=c("doc_id", "goal"))                                #joining the original goals back to the bigram data frame. Makes it easy see where certain word combinations occured
-    goal_count<-goal_tokens%>%dplyr::count(bigrams, sort= TRUE)%>%dplyr::ungroup()                                        #counting the occurence of each bigram. Needed for the visualization.
+    goal_count<-goal_tokens%>%dplyr::count(bigrams, sort= TRUE)%>%dplyr::ungroup()                                        #counting the occurrence of each bigram. Needed for the visualization.
 
-
+    output$bigram_count <- DT::renderDataTable({goal_count%>%arrange(desc(n))})
+    output$bigram_occ <- DT::renderDataTable({datatable(goal_tokens, filter="top", selection="multiple", escape=FALSE, options = list(dom = 'ltipr'))})
+    
     # creating the tidy text word cloud ----------------------------------------------------
-    # see also https://richpauloo.github.io/2017-12-29-Using-tidytext-to-make-word-clouds/
 
     pal <- RColorBrewer::brewer.pal(8,"Dark2")  #colors used
 
+    set.seed(0411)
     goal_count %>% dplyr::rename(freq=n, words=bigrams)%>%
         dplyr::filter(freq>input$min_freq)%>%
-        wordcloud2(color=pal, size = input$word_size, widgetsize =c("1000","1000"))                       #the word cloud
-#random.order = FALSE, max.words = 50,
+        wordcloud2(color=pal, size = input$word_size, widgetsize =c("1000","1000"))
                                 })
     
 }
