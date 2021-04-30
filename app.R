@@ -98,7 +98,7 @@ server <- function(input, output) {
          DT::datatable(goals, options = list(lengthMenu = c(5, 30, 50), pageLength = 5))
     })
 
-# Creates a plot for word cloud ----------------------------------
+# Creates a plot for word cloud -----------------------------------
     
         
     output$wordcloud <-renderWordcloud2({
