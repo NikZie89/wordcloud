@@ -30,7 +30,7 @@ package.check <- lapply(
 )
 
 
-
+#color_pallet<-row.names(brewer.pal.info%>%filter(colorblind==TRUE))
 
 
 #####App begins here -------------------------------------------------------
@@ -47,29 +47,37 @@ ui <- fluidPage(
         sidebarPanel(
     
             
-        fileInput("file", "Choose the CSV File with the goals", accept = ".csv"),
+        fileInput("file", "Choose the CSV File with the goals", accept = ".csv"),                      #to upload the file
         
-        checkboxInput("header", "Uncheck if the file has no column headers", TRUE),
+        checkboxInput("header", "Uncheck if the file has no column headers", TRUE),                    #to select if file has a header     
         
-        sliderInput(inputId = "min_freq", label = "Filter word combinations that exist less than n times", min = 1  ,max=50, value = 10, step = 1),
+        sliderInput(inputId = "min_freq",                                                              #for filtering bigrams with low occurrence
+                    label = "Filter word combinations that exist less than n times", 
+                    min = 1  ,max=50, value = 10, step = 1),
         
-        sliderInput(inputId = "word_size", label = "Word size", min = 0.5  ,max=2, value = 0.9, step = 0.1),
+        sliderInput(inputId = "word_size",                                                             #word size
+                    label = "Word size", 
+                    min = 0.5  ,max=2, value = 0.9, step = 0.1),
         
-        radioButtons("lang", "Language (for removing stop words)", selected = "nl",
+        radioButtons("lang", "Language (for removing stop words)", selected = "nl",                    #language of the file for removing stopwords
                      choices=c("Dutch"="nl",
                                "English"="en")),
         
-        radioButtons("delimiter", "Select the column delimiter for the csv file", selected = ";",
+        radioButtons("delimiter", "Select the column delimiter for the csv file", selected = ";",      #delimiter
                      choices=c("semicolon"=";",
-                               "comma"=","))
+                               "comma"=",")),
+        
+        selectInput("color", "Select a color palette",                                                 #for selecting the color
+                    choices = c("Set2", "Paired", "Dark2", "Greens", "Blues", "Reds", "GnBu"), 
+                    selected="Dark2")
         ),
 
     mainPanel(
         tabsetPanel(
             tabPanel("Table", div(DT::dataTableOutput("goal_table"), style = "font-size:80%")),
             tabPanel("Word cloud", wordcloud2Output("wordcloud", width = "100%", height=800)),
-            tabPanel("Bigram count", div(DT::dataTableOutput("bigram_count"), style = "font-size:80%")),
-            tabPanel("Bigram occurrence", div(DT::dataTableOutput("bigram_occ"), style = "font-size:80%"))
+            tabPanel("Bigram count", div(DT::dataTableOutput("bigram_count"), style = "font-size:120%")),
+            tabPanel("Bigram occurrence", div(DT::dataTableOutput("bigram_occ"), style = "font-size:100%"))
                     )
             )
         )
@@ -84,6 +92,17 @@ ui <- fluidPage(
 server <- function(input, output) {
     
     file <- reactive({input$file})                          #file as reactive, so I refer to it inside the reactive environments
+    
+    colorlist<-list(Dark2=brewer.pal(8, "Dark2"),
+                     Paired=brewer.pal(12, "Paired"),
+                     Set2=brewer.pal(8, "Set2"),
+                     Greens=colorRampPalette(brewer.pal(9, "Greens")[3:9])(20),                  #some custom color options
+                     Blues=colorRampPalette(brewer.pal(9, "Blues")[3:9])(20),
+                     Reds=colorRampPalette(brewer.pal(9, "Reds")[3:9])(20),
+                     GnBu=colorRampPalette(brewer.pal(9, "YlGnBu")[3:9])(20))
+
+    
+
     
 # Creates the preview table of the uploaded data set ----------------------------------
 
@@ -124,19 +143,18 @@ server <- function(input, output) {
         tidyr::unite(bigrams, word_1, word_2, sep=" ")
 
     goal_tokens<-goal_tokens%>%dplyr::left_join(goals_long, by=c("doc_id", "goal"))                                #joining the original goals back to the bigram data frame. Makes it easy see where certain word combinations occured
-    goal_count<-goal_tokens%>%dplyr::count(bigrams, sort= TRUE)%>%dplyr::ungroup()                                        #counting the occurrence of each bigram. Needed for the visualization.
+    goal_count<-goal_tokens%>%dplyr::count(bigrams, sort= TRUE)%>%dplyr::ungroup()                                 #counting the occurrence of each bigram. Needed for the visualization.
 
     output$bigram_count <- DT::renderDataTable({goal_count%>%arrange(desc(n))})
     output$bigram_occ <- DT::renderDataTable({datatable(goal_tokens, filter="top", selection="multiple", escape=FALSE, options = list(dom = 'ltipr'))})
     
     # creating the tidy text word cloud ----------------------------------------------------
 
-    pal <- RColorBrewer::brewer.pal(8,"Dark2")  #colors used
 
-    set.seed(0411)
+    set.seed(0411) #doesn't seem to be supported with wordcloud2
     goal_count %>% dplyr::rename(freq=n, words=bigrams)%>%
         dplyr::filter(freq>input$min_freq)%>%
-        wordcloud2(color=pal, size = input$word_size, widgetsize =c("1000","1000"))
+        wordcloud2(color=colorlist[[input$color]], size = input$word_size, widgetsize =c("1000","1000"))
                                 })
     
 }

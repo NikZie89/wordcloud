@@ -49,6 +49,6 @@ goal_count<-goal_tokens%>%dplyr::count(bigrams, sort= TRUE)%>%dplyr::ungroup()  
 pal <- RColorBrewer::brewer.pal(8,"Dark2")  #colors used
 
 goal_count %>% 
-  with(wordcloud(bigrams, n, random.order = FALSE, max.words = 50, colors=pal))                       #the word cloud
+  with(wordcloud(bigrams, n, random.order = FALSE, max.words = 100, colors=pal))                       #the word cloud
 
 
