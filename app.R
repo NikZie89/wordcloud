@@ -15,8 +15,8 @@
 ## from CRAN and then loaded.
 
 ## First specify the packages of interest
-packages = c("shiny", "DT", "tidyverse", "tidytext",
-             "stopwords", "tools", "wordcloud2")
+packages = c("shiny", "DT", "dplyr", "tidytext", "tidyr", "stringr",
+             "stopwords", "tools", "wordcloud2", "RColorBrewer")
 
 ## Now load or install&load all
 package.check <- lapply(
@@ -30,7 +30,6 @@ package.check <- lapply(
 )
 
 
-#color_pallet<-row.names(brewer.pal.info%>%filter(colorblind==TRUE))
 
 
 #####App begins here -------------------------------------------------------
@@ -93,9 +92,9 @@ server <- function(input, output) {
     
     file <- reactive({input$file})                          #file as reactive, so I refer to it inside the reactive environments
     
-    colorlist<-list(Dark2=brewer.pal(8, "Dark2"),
-                     Paired=brewer.pal(12, "Paired"),
-                     Set2=brewer.pal(8, "Set2"),
+    colorlist<-list(Dark2=RColorBrewer::brewer.pal(8, "Dark2"),
+                     Paired=RColorBrewer::brewer.pal(12, "Paired"),
+                     Set2=RColorBrewer::brewer.pal(8, "Set2"),
                      Greens=colorRampPalette(brewer.pal(9, "Greens")[3:9])(20),                  #some custom color options
                      Blues=colorRampPalette(brewer.pal(9, "Blues")[3:9])(20),
                      Reds=colorRampPalette(brewer.pal(9, "Reds")[3:9])(20),
@@ -154,7 +153,7 @@ server <- function(input, output) {
     set.seed(0411) #doesn't seem to be supported with wordcloud2
     goal_count %>% dplyr::rename(freq=n, words=bigrams)%>%
         dplyr::filter(freq>input$min_freq)%>%
-        wordcloud2(color=colorlist[[input$color]], size = input$word_size, widgetsize =c("1000","1000"))
+        wordcloud2::wordcloud2(color=colorlist[[input$color]], size = input$word_size, widgetsize =c("1000","1000"))
                                 })
     
 }
